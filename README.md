@@ -93,7 +93,7 @@ Undefined command: "x20wx".  Try "help".
 (gdb) 
 
 ```
-n GDB, we can observe the stack and see that the (20 * 'A') reaches the address of blah perfectly before any overwrite.
+In GDB, we can observe the stack and see that the (20 * 'A') reaches the address of blah perfectly before any overwrite.
 If we use (21 * 'A') as shown in the snippet below, we already start overwriting the address of blah.
 
 ```
